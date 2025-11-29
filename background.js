@@ -47,6 +47,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         // GitHub 코드에서는 Content Script를 삽입하여 처리하는 방식이 일반적입니다.
         // [TODO: Paste 로직 Content Script 호출로 구현]
     }
+    // 결과 및 상태 수신
+    chrome.runtime.onMessage.addListener((msg) => {
+        if (msg.action === "ocrResult") {
+            resultArea.value = msg.text;
+            showStatus("✅ 완료!");
+        } 
+        else if (msg.action === "ocrProgress") {
+            // 진행 상황을 텍스트 상자나 상태 메시지에 표시
+            showStatus(msg.text);
+            if(resultArea.value.startsWith("처리 중")) {
+                resultArea.value = msg.text + "\n(처음 한 번은 오래 걸립니다)";
+            }
+        }
+        else if (msg.action === "ocrError") {
+            showStatus("❌ 오류 발생");
+            resultArea.value = "오류가 발생했습니다.\n\n[해결법]\n확장 프로그램 관리 페이지 -> '서비스 워커' 클릭 -> 콘솔창의 붉은 에러 메시지를 확인하세요.";
+        }
+
 });
 // background.js
 importScripts('tesseract.min.js');
