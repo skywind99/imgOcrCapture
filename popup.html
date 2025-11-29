@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OCR Extractor</title>
+    <link rel="stylesheet" type="text/css" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <div class="button-grid">
+            <div class="card" id="upload-file">
+                <img src="img/upload-icon.png" class="icon-small">
+                <strong>이미지 업로드</strong>
+                <span>기기에서 선택</span>
+                <input type="file" id="file-input" accept="image/*" style="display:none;">
+            </div>
+
+            <div class="card" id="capture-screen">
+                <img src="img/camera-icon.png" class="icon-small">
+                <strong>스크린샷 찍기</strong>
+                <span>영역 선택 캡처</span>
+            </div>
+
+            <div class="card" id="paste-clipboard">
+                <img src="img/clipboard-icon.png" class="icon-small">
+                <strong>클립보드에서 붙여넣기</strong>
+                <span>Ctrl+V 또는 ⌘+V</span>
+            </div>
+
+            <div class="card" id="drag-drop">
+                <img src="img/dragdrop-icon.png" class="icon-small">
+                <strong>드래그 앤 드롭</strong>
+                <span>이 창에 파일을 끌어다 놓기</span>
+            </div>
+        </div>
+
+        <div id="result-area">
+            <textarea id="ocr-result" rows="5" placeholder="추출된 텍스트가 여기에 표시됩니다."></textarea>
+            <button id="copy-button">결과 복사</button>
+        </div>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>
