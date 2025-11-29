@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Image OCR Capture (Side Panel)",
-  "version": "1.1",
-  "description": "사이드 패널에서 편리하게 OCR 기능을 사용하세요.",
+  "version": "1.2",
+  "description": "사이드 패널 OCR 도구",
   "icons": {
     "16": "img/icon.png",
     "48": "img/icon.png",
@@ -11,14 +11,15 @@
   "permissions": [
     "activeTab",
     "scripting",
-    "sidePanel" 
+    "sidePanel"
   ],
   "side_panel": {
     "default_path": "popup.html"
   },
   "action": {
-    "default_title": "OCR 사이드 패널 열기",
+    "default_title": "OCR 패널 열기",
     "default_icon": "img/icon.png"
+    // ⚠️ 중요: 여기에 "default_popup" 줄이 있으면 절대 안 됩니다! ⚠️
   },
   "background": {
     "service_worker": "background.js"
