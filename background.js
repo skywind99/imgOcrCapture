@@ -1,108 +1,89 @@
-// Tesseract.js 및 코어 스크립트 로드
-importScripts("tesseract.js", "tesseract-core.js");
+// background.js (속도 최적화 버전)
 
-// Tesseract Worker 초기화
-let worker = null;
-
-async function initializeWorker() {
-    // Tesseract.js 설정 및 언어 팩 로드
-    worker = Tesseract.createWorker({
-        langPath: 'langs', // 언어 팩 경로 지정
-    });
-    await worker.load();
-    await worker.loadLanguage('eng+kor'); // 영어 및 한국어 로드
-    await worker.initialize('eng+kor');
-}
-
-initializeWorker(); 
-
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    // 1. 이미지 데이터 OCR 요청 처리
-    if (message.action === "performOcr" && worker) {
-        (async () => {
-            const { data: { text } } = await worker.recognize(message.dataUrl);
-            
-            // 결과를 팝업으로 다시 전송
-            chrome.runtime.sendMessage({ action: "ocrResult", text: text });
-        })();
-        return true; // 비동기 응답을 위해 true 반환
-    }
-
-    // 2. 캡처 시작 요청 (Content Script 삽입)
-    if (message.action === "startCapture") {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            if (tabs[0]) {
-                chrome.scripting.executeScript({
-                    target: { tabId: tabs[0].id },
-                    files: ['content.js']
-                });
-            }
-        });
-    }
-
-    // 3. 클립보드 붙여넣기 요청 (GitHub 코드는 ContextMenus 사용)
-    if (message.action === "pasteImage") {
-        // 클립보드 처리는 일반적으로 권한 문제로 인해 Content Script를 통해 처리됩니다.
-        // 또는 임시 Contenteditable 요소를 사용하여 Paste 이벤트를 잡습니다.
-        // GitHub 코드에서는 Content Script를 삽입하여 처리하는 방식이 일반적입니다.
-        // [TODO: Paste 로직 Content Script 호출로 구현]
-    }
-    // 결과 및 상태 수신
-    chrome.runtime.onMessage.addListener((msg) => {
-        if (msg.action === "ocrResult") {
-            resultArea.value = msg.text;
-            showStatus("✅ 완료!");
-        } 
-        else if (msg.action === "ocrProgress") {
-            // 진행 상황을 텍스트 상자나 상태 메시지에 표시
-            showStatus(msg.text);
-            if(resultArea.value.startsWith("처리 중")) {
-                resultArea.value = msg.text + "\n(처음 한 번은 오래 걸립니다)";
-            }
-        }
-        else if (msg.action === "ocrError") {
-            showStatus("❌ 오류 발생");
-            resultArea.value = "오류가 발생했습니다.\n\n[해결법]\n확장 프로그램 관리 페이지 -> '서비스 워커' 클릭 -> 콘솔창의 붉은 에러 메시지를 확인하세요.";
-        }
-
-});
-// background.js
 importScripts('tesseract.min.js');
 
+
+// [추가된 코드] 아이콘 클릭 시 사이드 패널이 열리도록 설정
+chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
+    .catch((error) => console.error(error));
+
+// ... (아래는 기존 OCR 최적화 코드 그대로 유지) ...
+let worker = null;
+let isWorkerReady = false;
+// ...
+
+let worker = null;
+let isWorkerReady = false;
+
+// 1. "Fast" 버전 언어 데이터 사용 (속도 향상 핵심)
+// 일반 데이터보다 용량이 작고 처리 속도가 빠릅니다.
+const LANG_PATH = 'https://tessdata.projectnaptha.com/4.0.0_fast'; 
+
+async function initTesseract() {
+    if (worker) return; // 이미 있으면 패스
+
+    console.log("🚀 OCR 엔진 시동 거는 중...");
+    
+    // 워커 생성 (경량화 데이터 경로 지정)
+    worker = Tesseract.createWorker({
+        langPath: LANG_PATH, 
+        logger: m => console.log(m) // 디버깅용 로그
+    });
+
+    await worker.load();
+    await worker.loadLanguage('kor+eng');
+    await worker.initialize('kor+eng');
+    
+    // 인식 속도 향상을 위한 파라미터 설정 (정확도 약간 희생, 속도 증가)
+    await worker.setParameters({
+        tessedit_pageseg_mode: Tesseract.PSM.AUTO, 
+    });
+
+    isWorkerReady = true;
+    console.log("✅ OCR 엔진 준비 완료! (대기 중)");
+}
+
+// 브라우저 켜지자마자 미리 로딩 시작 (클릭 시 딜레이 줄임)
+initTesseract();
+
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    
+    // OCR 요청 처리
     if (request.action === "performOcr") {
         
-        // 1. OCR 시작
-        Tesseract.recognize(
-            request.dataUrl,
-            'kor+eng', // 한국어 + 영어
-            { 
-                // 2. 진행 상황 로그 찍기 (여기가 핵심!)
-                logger: m => {
-                    console.log(m); // 서비스 워커 콘솔에 출력
-                    
-                    // 팝업창으로 상태 메시지 전송 (로딩 바 역할)
-                    if (m.status === 'recognizing text') {
-                        chrome.runtime.sendMessage({ 
-                            action: "ocrProgress", 
-                            text: `🔍 텍스트 분석 중... ${(m.progress * 100).toFixed(0)}%` 
-                        });
-                    } else if (m.status.includes('loading')) {
-                        chrome.runtime.sendMessage({ 
-                            action: "ocrProgress", 
-                            text: `📥 언어 데이터 다운로드 중...` 
-                        });
-                    }
-                }
+        const runOcr = async () => {
+            // 만약 아직 로딩 안됐으면 기다림
+            if (!isWorkerReady) {
+                chrome.runtime.sendMessage({ action: "ocrProgress", text: "⏳ 엔진 예열 중... 잠시만요!" });
+                await initTesseract();
             }
-        ).then(({ data: { text } }) => {
-            // 3. 완료 시 결과 전송
-            chrome.runtime.sendMessage({ action: "ocrResult", text: text });
-        }).catch(err => {
-            // 4. 에러 발생 시 전송
-            console.error(err);
-            chrome.runtime.sendMessage({ action: "ocrError", text: "에러 발생! 콘솔을 확인하세요." });
+
+            try {
+                // 실제 인식 수행
+                const { data: { text } } = await worker.recognize(request.dataUrl);
+                
+                chrome.runtime.sendMessage({ action: "ocrResult", text: text });
+
+            } catch (err) {
+                console.error(err);
+                chrome.runtime.sendMessage({ action: "ocrError", text: "인식 실패: " + err.message });
+            }
+        };
+
+        runOcr();
+        return true; 
+    }
+
+    // 캡처 요청 처리
+    if (request.action === "startCapture") {
+        chrome.tabs.captureVisibleTab(null, {format: 'png'}, (dataUrl) => {
+             // 캡처 후 바로 OCR 요청으로 넘김
+             chrome.runtime.sendMessage({ action: "ocrProgress", text: "📷 캡처 완료! 분석 시작..." });
+             
+             // 재귀 호출과 비슷하게 OCR 로직 실행
+             // (여기서는 메시지를 다시 보내는 방식으로 처리)
+             chrome.runtime.onMessage.dispatch({ action: "performOcr", dataUrl: dataUrl }, sender, sendResponse);
         });
     }
-    return true; // 비동기 응답 허용
 });
