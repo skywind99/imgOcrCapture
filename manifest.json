@@ -4,13 +4,13 @@
   "version": "1.0",
   "description": "Capture screen or paste image from clipboard to perform OCR.",
   "icons": {
-    "16": "img/icon.svg",
-    "48": "img/icon.svg",
-    "128": "img/icon.svg"
+    "16": "img/icon.png",
+    "48": "img/icon.png",
+    "128": "img/icon.png"
   },
   "action": {
     "default_popup": "popup.html",
-    "default_icon": "img/icon.svg"
+    "default_icon": "img/icon.png"
   },
   "permissions": [
     "activeTab",    
