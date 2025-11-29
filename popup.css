@@ -1,0 +1,29 @@
+/* popup.css */
+body {
+    width: 350px;
+    padding: 15px;
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #f7f9fc;
+}
+.header { text-align: center; margin-bottom: 20px; }
+.header h3 { margin: 0; }
+.header p { font-size: 12px; color: #666; }
+.button-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+.card {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    transition: 0.2s;
+}
+.card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+.card strong { display: block; font-size: 14px; margin-bottom: 5px; }
+.card span { font-size: 11px; color: #888; }
+#result-area { margin-top: 15px; }
+#ocr-result { width: 100%; height: 100px; padding: 5px; box-sizing: border-box; }
