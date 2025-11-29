@@ -1,13 +1,14 @@
-/* popup.css */
 body {
-    width: 350px;
+    width: 340px;
     padding: 15px;
-    font-family: 'Segoe UI', sans-serif;
+    font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; /* 한글 폰트 지정 */
     background-color: #f7f9fc;
+    color: #333;
 }
 .header { text-align: center; margin-bottom: 20px; }
-.header h3 { margin: 0; }
-.header p { font-size: 12px; color: #666; }
+.header h3 { margin: 0; font-size: 18px; }
+.header p { font-size: 12px; color: #666; margin-top: 5px; }
+
 .button-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -21,9 +22,22 @@ body {
     cursor: pointer;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     transition: 0.2s;
+    border: 1px solid #eee;
 }
-.card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-.card strong { display: block; font-size: 14px; margin-bottom: 5px; }
+.card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-color: #4285F4; }
+.card .icon { font-size: 24px; margin-bottom: 5px; } /* 이모지 크기 */
+.card strong { display: block; font-size: 14px; margin-bottom: 3px; }
 .card span { font-size: 11px; color: #888; }
+
 #result-area { margin-top: 15px; }
-#ocr-result { width: 100%; height: 100px; padding: 5px; box-sizing: border-box; }
+#ocr-result { 
+    width: 100%; 
+    height: 120px; 
+    padding: 10px; 
+    box-sizing: border-box; 
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    resize: none;
+    font-size: 13px;
+}
+#status-msg { text-align: center; color: #4285F4; font-size: 12px; margin-top: 5px; height: 20px; }
