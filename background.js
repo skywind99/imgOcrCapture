@@ -48,3 +48,43 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         // [TODO: Paste 로직 Content Script 호출로 구현]
     }
 });
+// background.js
+importScripts('tesseract.min.js');
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "performOcr") {
+        
+        // 1. OCR 시작
+        Tesseract.recognize(
+            request.dataUrl,
+            'kor+eng', // 한국어 + 영어
+            { 
+                // 2. 진행 상황 로그 찍기 (여기가 핵심!)
+                logger: m => {
+                    console.log(m); // 서비스 워커 콘솔에 출력
+                    
+                    // 팝업창으로 상태 메시지 전송 (로딩 바 역할)
+                    if (m.status === 'recognizing text') {
+                        chrome.runtime.sendMessage({ 
+                            action: "ocrProgress", 
+                            text: `🔍 텍스트 분석 중... ${(m.progress * 100).toFixed(0)}%` 
+                        });
+                    } else if (m.status.includes('loading')) {
+                        chrome.runtime.sendMessage({ 
+                            action: "ocrProgress", 
+                            text: `📥 언어 데이터 다운로드 중...` 
+                        });
+                    }
+                }
+            }
+        ).then(({ data: { text } }) => {
+            // 3. 완료 시 결과 전송
+            chrome.runtime.sendMessage({ action: "ocrResult", text: text });
+        }).catch(err => {
+            // 4. 에러 발생 시 전송
+            console.error(err);
+            chrome.runtime.sendMessage({ action: "ocrError", text: "에러 발생! 콘솔을 확인하세요." });
+        });
+    }
+    return true; // 비동기 응답 허용
+});
